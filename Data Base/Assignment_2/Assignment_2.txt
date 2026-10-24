@@ -1,0 +1,122 @@
+create database if not exists company_db;
+use company_db;
+
+create table Department (
+    DeptID int primary key,
+    DeptName varchar(50) not null,
+    Location varchar(50)
+);
+
+create table Emp (
+    EmpID int primary key,
+    EmpName varchar(100) not null,
+    Salary decimal(10,2) check (Salary > 0),
+    DeptID int,
+    JoiningDate date,
+    foreign key (DeptID) references Department(DeptID)
+);
+
+insert into Department values
+(10, 'Sales', 'Mumbai'),
+(20, 'IT', 'Pune'),
+(30, 'Finance', 'Nashik'),
+(40, 'HR', 'Delhi');
+
+-- add a new column
+alter table Emp add column email varchar(100);
+
+-- insert multiple records in one go
+insert into Emp (EmpID, EmpName, Salary, DeptID, JoiningDate, email) values
+(1, 'Amit Joshi', 45000, 10, '2021-03-15', 'amit@example.com'),
+(2, 'Neha Kulkarni', 62000, 20, '2020-07-01', 'neha@example.com'),
+(3, 'Rahul Patil', 55000, 20, '2019-11-20', 'rahul@example.com'),
+(4, 'Sneha More', 48000, 10, '2022-01-10', 'sneha@example.com'),
+(5, 'Vikas Shinde', 70000, 30, '2018-05-25', 'vikas@example.com');
+
+-- delete all records from a table (done on a copy so Emp stays intact)
+create table Emp_copy as select * from Emp;
+delete from Emp_copy;
+
+-- update salary where id = 5
+update Emp set Salary = 75000 where EmpID = 5;
+
+-- privileges
+create user if not exists 'readonly_user'@'localhost' identified by 'read123';
+create user if not exists 'temp_user'@'localhost' identified by 'temp123';
+
+grant select on company_db.Emp to 'readonly_user'@'localhost';
+
+grant insert on company_db.Emp to 'temp_user'@'localhost';
+revoke insert on company_db.Emp from 'temp_user'@'localhost';
+
+-- insert a new employee and commit
+start transaction;
+insert into Emp (EmpID, EmpName, Salary, DeptID, JoiningDate, email)
+values (101, 'Pooja Deshmukh', 52000, 20, '2023-02-14', 'pooja@example.com');
+commit;
+
+-- update salary of EmpID = 101 and commit
+start transaction;
+update Emp set Salary = 58000 where EmpID = 101;
+commit;
+
+-- savepoint before updating DeptID, then rollback to it
+start transaction;
+savepoint before_dept_update;
+update Emp set DeptID = 30 where EmpID = 101;
+rollback to before_dept_update;
+commit;
+
+-- employees with salary above 50000
+select * from Emp where Salary > 50000;
+
+-- 10% raise for DeptID = 10
+update Emp set Salary = Salary * 1.10 where DeptID = 10;
+
+-- employee count per department
+select DeptID, count(*) as total_employees
+from Emp
+group by DeptID;
+
+-- departments with no employees
+select d.DeptID, d.DeptName
+from Department d
+left join Emp e on d.DeptID = e.DeptID
+where e.EmpID is null;
+
+-- view for salespeople from Mumbai
+create table Salespeople (
+    salesman_id int primary key,
+    name varchar(100),
+    city varchar(50),
+    commission decimal(4,2)
+);
+
+insert into Salespeople values
+(1, 'Karan Mehta', 'Mumbai', 0.15),
+(2, 'Anjali Rao', 'Pune', 0.12),
+(3, 'Sameer Khan', 'Mumbai', 0.13),
+(4, 'Divya Nair', 'Delhi', 0.10),
+(5, 'Rohit Jadhav', 'Nashik', 0.11);
+
+create view mumbai_salespeople as
+select * from Salespeople where city = 'Mumbai';
+
+select * from mumbai_salespeople;
+
+-- highest salary
+select max(Salary) as highest_salary from Emp;
+
+-- 2nd highest salary
+select max(Salary) as second_highest_salary
+from Emp
+where Salary < (select max(Salary) from Emp);
+
+-- employees by joining date, latest first
+select * from Emp order by JoiningDate desc;
+
+-- rename column
+alter table Department rename column DeptName to DepartmentName;
+
+-- truncate Emp (keep this last, it wipes the table)
+truncate table Emp;
