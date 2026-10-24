@@ -1,0 +1,131 @@
+use company_db;
+
+drop table if exists EmpBackup;
+drop table if exists ProjectArchive;
+drop table if exists Project;
+drop table if exists Emp;
+drop table if exists Dept;
+
+create table Dept (
+    DeptID int primary key,
+    DeptName varchar(50) not null,
+    Location varchar(50)
+);
+
+-- EmpID is auto incremented, ManagerID points back to Emp (used for the self join)
+create table Emp (
+    EmpID int auto_increment primary key,
+    EmpName varchar(100) not null,
+    Salary decimal(10,2),
+    DeptID int,
+    ManagerID int,
+    JoiningDate date,
+    foreign key (DeptID) references Dept(DeptID),
+    foreign key (ManagerID) references Emp(EmpID)
+);
+
+create table Project (
+    ProjectID int primary key,
+    ProjectName varchar(100) not null,
+    DeptID int,
+    Budget decimal(12,2),
+    StartDate date,
+    foreign key (DeptID) references Dept(DeptID)
+);
+
+insert into Dept values
+(10, 'Sales', 'Mumbai'),
+(20, 'IT', 'Pune'),
+(30, 'Finance', 'Mumbai'),
+(40, 'HR', 'Delhi'),
+(50, 'Marketing', 'Nashik');
+
+insert into Emp (EmpName, Salary, DeptID, ManagerID, JoiningDate) values
+('Rajesh Kumar', 90000, 10, null, '2017-04-10'),
+('Neha Kulkarni', 62000, 20, 1, '2019-07-01'),
+('Rahul Patil', 55000, 10, 1, '2019-11-20'),
+('Sneha More', 48000, 10, 3, '2022-01-10'),
+('Vikas Shinde', 70000, 30, 1, '2018-05-25'),
+('Aman Verma', 45000, 10, 3, '2020-03-15'),
+('Kiran Joshi', 40000, 10, 3, '2021-02-18'),
+('Pratik Naik', 41000, 10, 3, '2021-12-30'),
+('Mohan Iyer', 29000, null, 2, '2022-06-14'),
+('Divya Nair', 52000, 20, 2, '2020-09-12');
+
+insert into Project values
+(1, 'Website Revamp', 20, 500000, '2024-01-10'),
+(2, 'Sales Portal', 10, 350000, '2024-03-05'),
+(3, 'Audit Automation', 30, 250000, '2024-05-20'),
+(4, 'Lead Tracking', 10, 150000, '2024-07-01'),
+(5, 'Hiring Drive', 40, 100000, '2024-08-15');
+
+-- Cartesian product
+-- Relational algebra:  Emp × Dept
+select * from Emp, Dept;
+
+-- inner join
+select e.EmpName, d.DeptName
+from Emp e
+inner join Dept d on e.DeptID = d.DeptID;
+
+-- left outer join
+select e.EmpID, e.EmpName, d.DeptID, d.DeptName, d.Location
+from Emp e
+left join Dept d on e.DeptID = d.DeptID;
+
+-- right outer join
+select e.EmpName, d.DeptID, d.DeptName
+from Emp e
+right join Dept d on e.DeptID = d.DeptID;
+
+-- natural join (joins on the common column DeptID)
+select * from Emp natural join Dept;
+
+-- cross join with Project
+select e.EmpName, p.ProjectName
+from Emp e
+cross join Project p;
+
+-- empty copy of Emp
+create table EmpBackup like Emp;
+
+-- copy data into the backup
+insert into EmpBackup select * from Emp;
+
+-- archive table with structure and data
+create table ProjectArchive as select * from Project;
+
+-- salary above the average
+select * from Emp
+where Salary > (select avg(Salary) from Emp);
+
+-- employees working in departments located in Mumbai
+select * from Emp
+where DeptID in (select DeptID from Dept where Location = 'Mumbai');
+
+-- departments with more than 5 employees
+select * from Dept
+where DeptID in (
+    select DeptID from Emp
+    group by DeptID
+    having count(*) > 5
+);
+
+-- max salary using a subquery
+select * from Emp
+where Salary = (select max(Salary) from Emp);
+
+-- self join on Emp: employee with their manager
+select e.EmpName as Employee, m.EmpName as Manager
+from Emp e
+left join Emp m on e.ManagerID = m.EmpID;
+
+-- self join on Dept: departments sharing the same location
+select d1.DeptName as Dept1, d2.DeptName as Dept2, d1.Location
+from Dept d1
+join Dept d2 on d1.Location = d2.Location and d1.DeptID < d2.DeptID;
+
+-- self join on Project: projects belonging to the same department
+select p1.ProjectName as Project1, p2.ProjectName as Project2, p1.DeptID
+from Project p1
+join Project p2 on p1.DeptID = p2.DeptID and p1.ProjectID < p2.ProjectID;
