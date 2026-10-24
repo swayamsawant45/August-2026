@@ -1,0 +1,131 @@
+create database if not exists proc_db;
+use proc_db;
+
+delimiter //
+
+-- even or odd
+create procedure check_even_odd(in num int)
+begin
+    if num % 2 = 0 then
+        select num as number, 'Even' as result;
+    else
+        select num as number, 'Odd' as result;
+    end if;
+end //
+
+-- simple interest
+create procedure calculate_interest(in principal decimal(12,2), in rate decimal(5,2), in years int)
+begin
+    declare si decimal(12,2);
+    set si = (principal * rate * years) / 100;
+    select principal, rate, years, si as simple_interest;
+end //
+
+-- grade
+create procedure calculate_grade(in sid int, in sname varchar(50), in marks int)
+begin
+    declare grade varchar(2);
+
+    if marks >= 90 then
+        set grade = 'A+';
+    elseif marks >= 80 then
+        set grade = 'A';
+    elseif marks >= 70 then
+        set grade = 'B';
+    elseif marks >= 60 then
+        set grade = 'C';
+    elseif marks >= 50 then
+        set grade = 'D';
+    else
+        set grade = 'F';
+    end if;
+
+    select sid as student_id, sname as student_name, marks, grade;
+end //
+
+-- bonus
+create procedure calculate_bonus(in ename varchar(50), in salary decimal(10,2))
+begin
+    declare bonus_pct int;
+    declare bonus_amt decimal(10,2);
+
+    if salary >= 100000 then
+        set bonus_pct = 20;
+    elseif salary >= 50000 then
+        set bonus_pct = 15;
+    elseif salary >= 30000 then
+        set bonus_pct = 10;
+    else
+        set bonus_pct = 5;
+    end if;
+
+    set bonus_amt = salary * bonus_pct / 100;
+
+    select ename as employee_name,
+           salary,
+           bonus_pct as bonus_percentage,
+           bonus_amt as bonus_amount,
+           salary + bonus_amt as total_salary;
+end //
+
+-- maximum of three numbers
+create procedure find_maximum(in a int, in b int, in c int)
+begin
+    declare maxnum int;
+    set maxnum = a;
+
+    if b > maxnum then
+        set maxnum = b;
+    end if;
+
+    if c > maxnum then
+        set maxnum = c;
+    end if;
+
+    select a, b, c, maxnum as largest_number;
+end //
+
+-- salary analysis
+create procedure salary_analysis(in ename varchar(50), in salary decimal(10,2))
+begin
+    declare category varchar(10);
+    declare allow_pct int;
+    declare allow_amt decimal(10,2);
+
+    if salary >= 100000 then
+        set category = 'High';
+        set allow_pct = 20;
+    elseif salary >= 50000 then
+        set category = 'Medium';
+        set allow_pct = 15;
+    else
+        set category = 'Low';
+        set allow_pct = 10;
+    end if;
+
+    set allow_amt = salary * allow_pct / 100;
+
+    select ename as employee_name,
+           salary,
+           category,
+           allow_pct as allowance_percentage,
+           allow_amt as allowance_amount,
+           salary + allow_amt as final_salary;
+end //
+
+-- electricity bill
+create procedure calculate_electricity_bill(in cname varchar(50), in units int)
+begin
+    declare bill decimal(10,2) default 0;
+
+    if units <= 100 then
+        set bill = units * 2;
+    elseif units <= 200 then
+        set bill = (100 * 2) + (units - 100) * 3;
+    elseif units <= 400 then
+        set bill = (100 * 2) + (100 * 3) + (units - 200) * 5;
+    else
+        set bill = (100 * 2) + (100 * 3) + (200 * 5) + (units - 400) * 7;
+    end if;
+
+    select cname as consumer_name, units as units_consumed,
